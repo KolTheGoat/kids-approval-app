@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#176b5b">
+    <title>אישור ילדים | Kids Approval</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">ניהול הרשאות</p>
+        <h1>אישור ילדים</h1>
+      </div>
+      <button class="install-btn" id="installButton" type="button" hidden>התקן אפליקציה</button>
+    </header>
+
+    <main class="layout">
+      <section class="panel request-panel" aria-labelledby="newRequestTitle">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">בקשה חדשה</p>
+            <h2 id="newRequestTitle">הוספת ילד לאישור</h2>
+          </div>
+        </div>
+
+        <form id="requestForm" class="request-form">
+          <label>
+            שם הילד
+            <input id="childName" required minlength="2" placeholder="לדוגמה: נועם כהן">
+          </label>
+
+          <label>
+            גיל
+            <input id="childAge" required type="number" min="3" max="18" placeholder="לדוגמה: 12">
+          </label>
+
+          <label>
+            אימייל הורה
+            <input id="parentEmail" required type="email" placeholder="parent@example.com">
+          </label>
+
+          <label>
+            סיבה / הערה
+            <textarea id="requestNote" rows="4" placeholder="מה הילד מבקש לעשות?"></textarea>
+          </label>
+
+          <button class="primary-btn" type="submit">שלח לאישור</button>
+        </form>
+      </section>
+
+      <section class="panel dashboard-panel" aria-labelledby="dashboardTitle">
+        <div class="panel-head dashboard-head">
+          <div>
+            <p class="eyebrow">לוח ניהול</p>
+            <h2 id="dashboardTitle">בקשות ילדים</h2>
+          </div>
+          <div class="segmented" role="group" aria-label="סינון בקשות">
+            <button class="filter active" type="button" data-filter="all">הכול</button>
+            <button class="filter" type="button" data-filter="pending">ממתין</button>
+            <button class="filter" type="button" data-filter="approved">מאושר</button>
+            <button class="filter" type="button" data-filter="rejected">נדחה</button>
+          </div>
+        </div>
+
+        <div class="stats" aria-label="סיכום בקשות">
+          <article>
+            <span id="pendingCount">0</span>
+            <strong>ממתינים</strong>
+          </article>
+          <article>
+            <span id="approvedCount">0</span>
+            <strong>מאושרים</strong>
+          </article>
+          <article>
+            <span id="rejectedCount">0</span>
+            <strong>נדחו</strong>
+          </article>
+        </div>
+
+        <div id="requestsList" class="requests-list"></div>
+      </section>
+    </main>
+
+    <template id="requestTemplate">
+      <article class="request-card">
+        <div class="request-main">
+          <span class="status"></span>
+          <div>
+            <h3></h3>
+            <p class="meta"></p>
+            <p class="note"></p>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="approve" type="button">אשר</button>
+          <button class="reject" type="button">דחה</button>
+        </div>
+      </article>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
