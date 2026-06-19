@@ -1,99 +1,149 @@
 <!doctype html>
 <html lang="he" dir="rtl">
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#176b5b">
-    <title>אישור ילדים | Kids Approval</title>
-    <link rel="manifest" href="manifest.webmanifest">
-    <link rel="stylesheet" href="styles.css">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <title>אפליקציית הסעות</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header class="app-header">
+    <header class="topbar">
       <div>
-        <p class="eyebrow">ניהול הרשאות</p>
-        <h1>אישור ילדים</h1>
+        <p class="eyebrow">ניהול הסעות לפעולה</p>
+        <h1>אפליקציית הסעות</h1>
       </div>
-      <button class="install-btn" id="installButton" type="button" hidden>התקן אפליקציה</button>
+      <button class="install-button" id="installButton" hidden>התקן כאפליקציה</button>
     </header>
 
-    <main class="layout">
-      <section class="panel request-panel" aria-labelledby="newRequestTitle">
-        <div class="panel-head">
+    <main class="shell">
+      <section class="panel driver-panel" aria-labelledby="driverTitle">
+        <div class="panel-heading">
+          <span class="panel-icon" aria-hidden="true">🚗</span>
           <div>
-            <p class="eyebrow">בקשה חדשה</p>
-            <h2 id="newRequestTitle">הוספת ילד לאישור</h2>
+            <h2 id="driverTitle">פרטי נהג</h2>
+            <p>פותחים הסעה חדשה ומגדירים מאיפה יוצאים, כמה מקומות יש ולאן נוסעים.</p>
           </div>
         </div>
 
-        <form id="requestForm" class="request-form">
+        <form id="driverForm" class="form-grid">
           <label>
-            שם הילד
-            <input id="childName" required minlength="2" placeholder="לדוגמה: נועם כהן">
+            שם הנהג
+            <input id="driverName" name="driverName" autocomplete="name" required />
           </label>
-
           <label>
-            גיל
-            <input id="childAge" required type="number" min="3" max="18" placeholder="לדוגמה: 12">
+            מאיפה יוצא
+            <input id="driverOrigin" name="driverOrigin" required />
           </label>
-
           <label>
-            אימייל הורה
-            <input id="parentEmail" required type="email" placeholder="parent@example.com">
+            מס' מקומות ברכב
+            <input id="driverSeats" name="driverSeats" type="number" min="1" max="9" value="4" required />
           </label>
-
           <label>
-            סיבה / הערה
-            <textarea id="requestNote" rows="4" placeholder="מה הילד מבקש לעשות?"></textarea>
+            הכתובת שאליה מכוונים
+            <input id="driverDestination" name="driverDestination" placeholder="לדוגמה: בית הפעולה" required />
           </label>
-
-          <button class="primary-btn" type="submit">שלח לאישור</button>
+          <button type="submit" class="primary-action">הוסף הסעה</button>
         </form>
       </section>
 
-      <section class="panel dashboard-panel" aria-labelledby="dashboardTitle">
-        <div class="panel-head dashboard-head">
+      <section class="panel passenger-panel" aria-labelledby="passengerTitle">
+        <div class="panel-heading">
+          <span class="panel-icon" aria-hidden="true">📍</span>
           <div>
-            <p class="eyebrow">לוח ניהול</p>
-            <h2 id="dashboardTitle">בקשות ילדים</h2>
-          </div>
-          <div class="segmented" role="group" aria-label="סינון בקשות">
-            <button class="filter active" type="button" data-filter="all">הכול</button>
-            <button class="filter" type="button" data-filter="pending">ממתין</button>
-            <button class="filter" type="button" data-filter="approved">מאושר</button>
-            <button class="filter" type="button" data-filter="rejected">נדחה</button>
+            <h2 id="passengerTitle">פרטי נוסע</h2>
+            <p>רושמים נוסע ומחברים אותו להסעה קיימת לאישור.</p>
           </div>
         </div>
 
-        <div class="stats" aria-label="סיכום בקשות">
+        <form id="passengerForm" class="form-grid">
+          <label>
+            שם הנוסע
+            <input id="passengerName" name="passengerName" autocomplete="name" required />
+          </label>
+          <label>
+            כתובת הנוסע
+            <input id="passengerAddress" name="passengerAddress" required />
+          </label>
+          <label class="wide-field">
+            בחר הסעה
+            <select id="rideSelect" name="rideSelect" required></select>
+          </label>
+          <button type="submit" class="primary-action">שלח לאישור</button>
+        </form>
+      </section>
+
+      <section class="dashboard" aria-labelledby="dashboardTitle">
+        <div class="dashboard-heading">
+          <div>
+            <p class="eyebrow">אישור ההסעה</p>
+            <h2 id="dashboardTitle">בקשות ומקומות פנויים</h2>
+          </div>
+          <div class="filters" role="group" aria-label="סינון בקשות">
+            <button class="filter active" data-filter="all" type="button">הכול</button>
+            <button class="filter" data-filter="pending" type="button">ממתין</button>
+            <button class="filter" data-filter="approved" type="button">מאושר</button>
+            <button class="filter" data-filter="rejected" type="button">נדחה</button>
+          </div>
+        </div>
+
+        <div class="stats" aria-label="סיכום הסעות">
           <article>
-            <span id="pendingCount">0</span>
-            <strong>ממתינים</strong>
+            <strong id="pendingCount">0</strong>
+            <span>ממתינים לאישור</span>
           </article>
           <article>
-            <span id="approvedCount">0</span>
-            <strong>מאושרים</strong>
+            <strong id="approvedCount">0</strong>
+            <span>נוסעים מאושרים</span>
           </article>
           <article>
-            <span id="rejectedCount">0</span>
-            <strong>נדחו</strong>
+            <strong id="openSeatsCount">0</strong>
+            <span>מקומות פנויים</span>
           </article>
         </div>
 
-        <div id="requestsList" class="requests-list"></div>
+        <div class="split-view">
+          <section aria-labelledby="ridesTitle">
+            <h3 id="ridesTitle">הסעות פעילות</h3>
+            <div id="ridesList" class="card-list"></div>
+          </section>
+          <section aria-labelledby="requestsTitle">
+            <h3 id="requestsTitle">בקשות נוסעים</h3>
+            <div id="requestsList" class="card-list"></div>
+          </section>
+        </div>
       </section>
     </main>
 
+    <template id="rideTemplate">
+      <article class="ride-card">
+        <div class="card-top">
+          <h4></h4>
+          <span class="seat-badge"></span>
+        </div>
+        <dl>
+          <div>
+            <dt>יוצא מ</dt>
+            <dd data-origin></dd>
+          </div>
+          <div>
+            <dt>יעד</dt>
+            <dd data-destination></dd>
+          </div>
+        </dl>
+      </article>
+    </template>
+
     <template id="requestTemplate">
       <article class="request-card">
-        <div class="request-main">
-          <span class="status"></span>
-          <div>
-            <h3></h3>
-            <p class="meta"></p>
-            <p class="note"></p>
-          </div>
+        <div class="card-top">
+          <h4></h4>
+          <span class="status-badge"></span>
         </div>
+        <p class="route-line"></p>
+        <p class="driver-line"></p>
         <div class="actions">
           <button class="approve" type="button">אשר</button>
           <button class="reject" type="button">דחה</button>

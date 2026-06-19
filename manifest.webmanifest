@@ -1,18 +1,18 @@
 {
-  "name": "Kids Approval",
-  "short_name": "Kids Approval",
+  "name": "אפליקציית הסעות",
+  "short_name": "הסעות",
+  "description": "ניהול נהגים, נוסעים ואישור הסעות לפעולה.",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#f4f6f1",
-  "theme_color": "#176b5b",
-  "lang": "he",
+  "background_color": "#eef7f4",
+  "theme_color": "#0f766e",
   "dir": "rtl",
+  "lang": "he",
   "icons": [
     {
       "src": "icon.svg",
       "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/svg+xml"
     }
   ]
 }
