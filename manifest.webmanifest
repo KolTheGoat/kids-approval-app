@@ -1,11 +1,11 @@
 {
   "name": "אפליקציית הסעות",
   "short_name": "הסעות",
-  "description": "ניהול נהגים, נוסעים ואישור הסעות לפעולה.",
+  "description": "ניהול רכבים, נוסעים ואישורי הסעה עם שעת מוכנות ליציאה.",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#eef7f4",
-  "theme_color": "#0f766e",
+  "background_color": "#f3f6fb",
+  "theme_color": "#111827",
   "dir": "rtl",
   "lang": "he",
   "icons": [

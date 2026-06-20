@@ -1,91 +1,84 @@
-const rideStorageKey = "transport-rides-v1";
-const requestStorageKey = "transport-requests-v1";
+const stateKey = "hesaot-state-v3";
 
-const seedRides = [
-  {
-    id: "ride-ramot",
-    driverName: "דני כהן",
-    origin: "רמות",
-    seats: 4,
-    destination: "בית הפעולה - המרכז",
-    createdAt: Date.now() - 300000
-  },
-  {
-    id: "ride-givat-shaul",
-    driverName: "נועה לוי",
-    origin: "גבעת שאול",
-    seats: 3,
-    destination: "בית הפעולה - המרכז",
-    createdAt: Date.now() - 200000
-  }
-];
+const defaultState = {
+  rides: [
+    {
+      id: "ride-main",
+      driverName: "יוסי כהן",
+      origin: "רמות",
+      seats: 5,
+      destination: "בית הפעולה",
+      createdAt: Date.now() - 120000
+    }
+  ],
+  passengers: [
+    {
+      id: "passenger-dana",
+      rideId: "ride-main",
+      name: "דנה לוי",
+      address: "רחוב התאנה 12",
+      status: "approved",
+      readyTime: "16:00",
+      createdAt: Date.now() - 90000
+    },
+    {
+      id: "passenger-noam",
+      rideId: "ride-main",
+      name: "נועם פרץ",
+      address: "רחוב השקד 8",
+      status: "pending",
+      readyTime: "",
+      createdAt: Date.now() - 40000
+    }
+  ]
+};
 
-const seedRequests = [
-  {
-    id: "request-ori",
-    passengerName: "אורי מזרחי",
-    passengerAddress: "רחוב התאנה 12",
-    rideId: "ride-ramot",
-    status: "pending",
-    createdAt: Date.now() - 120000
-  },
-  {
-    id: "request-michal",
-    passengerName: "מיכל פרץ",
-    passengerAddress: "רחוב השקד 8",
-    rideId: "ride-givat-shaul",
-    status: "approved",
-    createdAt: Date.now() - 90000
-  }
-];
-
-let rides = loadCollection(rideStorageKey, seedRides);
-let requests = loadCollection(requestStorageKey, seedRequests);
-let activeFilter = "all";
+let state = loadState();
+let preselectedRideId = "";
 let installPrompt = null;
 
+const carsList = document.querySelector("#carsList");
+const requestsList = document.querySelector("#requestsList");
+const rideDialog = document.querySelector("#rideDialog");
+const passengerDialog = document.querySelector("#passengerDialog");
 const driverForm = document.querySelector("#driverForm");
 const passengerForm = document.querySelector("#passengerForm");
 const rideSelect = document.querySelector("#rideSelect");
-const ridesList = document.querySelector("#ridesList");
-const requestsList = document.querySelector("#requestsList");
-const rideTemplate = document.querySelector("#rideTemplate");
-const requestTemplate = document.querySelector("#requestTemplate");
+const openRideForm = document.querySelector("#openRideForm");
+const openPassengerForm = document.querySelector("#openPassengerForm");
+const installButton = document.querySelector("#installButton");
+const carsCount = document.querySelector("#carsCount");
 const pendingCount = document.querySelector("#pendingCount");
 const approvedCount = document.querySelector("#approvedCount");
 const openSeatsCount = document.querySelector("#openSeatsCount");
-const installButton = document.querySelector("#installButton");
 
-function loadCollection(key, fallback) {
-  const saved = localStorage.getItem(key);
+function loadState() {
+  const saved = localStorage.getItem(stateKey);
   if (!saved) {
-    localStorage.setItem(key, JSON.stringify(fallback));
-    return [...fallback];
+    localStorage.setItem(stateKey, JSON.stringify(defaultState));
+    return structuredClone(defaultState);
   }
 
   try {
     return JSON.parse(saved);
   } catch {
-    localStorage.setItem(key, JSON.stringify(fallback));
-    return [...fallback];
+    localStorage.setItem(stateKey, JSON.stringify(defaultState));
+    return structuredClone(defaultState);
   }
 }
 
 function saveState() {
-  localStorage.setItem(rideStorageKey, JSON.stringify(rides));
-  localStorage.setItem(requestStorageKey, JSON.stringify(requests));
+  localStorage.setItem(stateKey, JSON.stringify(state));
 }
 
-function approvedSeatsForRide(rideId) {
-  return requests.filter((request) => request.rideId === rideId && request.status === "approved").length;
+function ridePassengers(rideId, status) {
+  return state.passengers.filter((passenger) => {
+    return passenger.rideId === rideId && (!status || passenger.status === status);
+  });
 }
 
-function openSeatsForRide(ride) {
-  return Math.max(ride.seats - approvedSeatsForRide(ride.id), 0);
-}
-
-function getRide(rideId) {
-  return rides.find((ride) => ride.id === rideId);
+function openSeats(ride) {
+  return Math.max(ride.seats - ridePassengers(ride.id, "approved").length, 0);
 }
 
 function statusText(status) {
@@ -94,170 +87,276 @@ function statusText(status) {
   return "ממתין";
 }
 
+function showDialog(dialog) {
+  if (typeof dialog.showModal === "function") {
+    dialog.showModal();
+  } else {
+    dialog.setAttribute("open", "");
+  }
+}
+
+function openPassengerDialog(rideId = "") {
+  preselectedRideId = rideId;
+  renderRideSelect();
+  showDialog(passengerDialog);
+}
+
 function renderRideSelect() {
   rideSelect.innerHTML = "";
 
-  if (rides.length === 0) {
+  state.rides.forEach((ride) => {
     const option = document.createElement("option");
-    option.textContent = "אין עדיין הסעות";
+    option.value = ride.id;
+    option.textContent = `${ride.driverName} - ${ride.origin} אל ${ride.destination} (${openSeats(ride)} פנויים)`;
+    option.disabled = openSeats(ride) === 0;
+    option.selected = preselectedRideId === ride.id;
+    rideSelect.append(option);
+  });
+
+  if (!rideSelect.children.length) {
+    const option = document.createElement("option");
+    option.textContent = "אין רכבים, צריך להוסיף רכב קודם";
     option.disabled = true;
     option.selected = true;
     rideSelect.append(option);
+  }
+}
+
+function renderCars() {
+  carsList.innerHTML = "";
+
+  if (!state.rides.length) {
+    const empty = document.createElement("article");
+    empty.className = "empty-card";
+    empty.innerHTML = `
+      <div class="empty-car-icon">🚗</div>
+      <h3>אין רכבים עדיין</h3>
+      <p>לחץ על הפלוס כדי להוסיף רכב ראשון.</p>
+    `;
+    carsList.append(empty);
     return;
   }
 
-  rides.forEach((ride) => {
-    const option = document.createElement("option");
-    const freeSeats = openSeatsForRide(ride);
-    option.value = ride.id;
-    option.textContent = `${ride.driverName} - ${ride.origin} אל ${ride.destination} (${freeSeats} פנויים)`;
-    option.disabled = freeSeats === 0;
-    rideSelect.append(option);
-  });
-}
-
-function renderRides() {
-  ridesList.innerHTML = "";
-
-  rides
+  state.rides
     .slice()
     .sort((a, b) => b.createdAt - a.createdAt)
     .forEach((ride) => {
-      const card = rideTemplate.content.firstElementChild.cloneNode(true);
-      const freeSeats = openSeatsForRide(ride);
-      card.querySelector("h4").textContent = ride.driverName;
-      card.querySelector("[data-origin]").textContent = ride.origin;
-      card.querySelector("[data-destination]").textContent = ride.destination;
-      card.querySelector(".seat-badge").textContent = `${freeSeats}/${ride.seats} פנויים`;
-      card.classList.toggle("full", freeSeats === 0);
-      ridesList.append(card);
+      const approved = ridePassengers(ride.id, "approved");
+      const pending = ridePassengers(ride.id, "pending");
+      const card = document.createElement("article");
+      card.className = "car-card";
+
+      const seatsMarkup = Array.from({ length: ride.seats }, (_, index) => {
+        const passenger = approved[index];
+        if (passenger) {
+          return `
+            <div class="seat occupied">
+              <strong>${passenger.name}</strong>
+              <small>${passenger.address}</small>
+              <em>מוכן ב-${passenger.readyTime}</em>
+            </div>
+          `;
+        }
+
+        return `
+          <button class="seat empty" type="button" data-add-passenger="${ride.id}">
+            <span>+</span>
+            מקום פנוי
+          </button>
+        `;
+      }).join("");
+
+      card.innerHTML = `
+        <div class="car-header">
+          <div>
+            <p class="eyebrow">רכב</p>
+            <h3>${ride.driverName}</h3>
+          </div>
+          <button class="small-action" type="button" data-add-passenger="${ride.id}">הוסף נוסע</button>
+        </div>
+
+        <div class="ride-meta">
+          <span>יוצא מ: ${ride.origin}</span>
+          <span>יעד: ${ride.destination}</span>
+          <span>${openSeats(ride)}/${ride.seats} פנויים</span>
+        </div>
+
+        <div class="car-map" aria-label="מבט על של רכב">
+          <div class="driver-seat">
+            <strong>X</strong>
+            <small>נהג</small>
+          </div>
+          ${seatsMarkup}
+        </div>
+
+        ${pending.length ? `<p class="pending-note">יש ${pending.length} בקשות שמחכות לאישור הנהג.</p>` : ""}
+      `;
+
+      carsList.append(card);
     });
 }
 
 function renderRequests() {
   requestsList.innerHTML = "";
-
-  const visibleRequests = requests
-    .filter((request) => activeFilter === "all" || request.status === activeFilter)
+  const requests = state.passengers
     .slice()
     .sort((a, b) => b.createdAt - a.createdAt);
 
-  if (visibleRequests.length === 0) {
+  if (!requests.length) {
     const empty = document.createElement("p");
     empty.className = "empty-state";
-    empty.textContent = "אין בקשות שמתאימות לסינון הזה.";
+    empty.textContent = "אין בקשות נוסעים עדיין.";
     requestsList.append(empty);
     return;
   }
 
-  visibleRequests.forEach((request) => {
-    const ride = getRide(request.rideId);
-    const card = requestTemplate.content.firstElementChild.cloneNode(true);
-    const approveButton = card.querySelector(".approve");
-    const rejectButton = card.querySelector(".reject");
+  requests.forEach((passenger) => {
+    const ride = state.rides.find((item) => item.id === passenger.rideId);
+    const card = document.createElement("article");
+    card.className = `request-card ${passenger.status}`;
 
-    card.dataset.status = request.status;
-    card.querySelector("h4").textContent = request.passengerName;
-    card.querySelector(".status-badge").textContent = statusText(request.status);
-    card.querySelector(".route-line").textContent = `כתובת נוסע: ${request.passengerAddress}`;
-    card.querySelector(".driver-line").textContent = ride
-      ? `הסעה: ${ride.driverName}, מ-${ride.origin} אל ${ride.destination}`
-      : "ההסעה המקורית לא נמצאה";
+    const canApprove = ride && passenger.status !== "approved" && openSeats(ride) > 0;
+    const approvedMessage = passenger.status === "approved"
+      ? `<div class="ready-message">הודעה לנוסע: תהיה מוכן ב-${passenger.readyTime}</div>`
+      : "";
 
-    approveButton.disabled = request.status === "approved" || !ride || openSeatsForRide(ride) === 0;
-    rejectButton.disabled = request.status === "rejected";
-    approveButton.addEventListener("click", () => updateRequestStatus(request.id, "approved"));
-    rejectButton.addEventListener("click", () => updateRequestStatus(request.id, "rejected"));
+    card.innerHTML = `
+      <div class="request-top">
+        <div>
+          <p class="eyebrow">הודעה מהאפליקציה לנהג</p>
+          <h3>${ride ? ride.driverName : "נהג לא נמצא"}</h3>
+        </div>
+        <span class="status-badge">${statusText(passenger.status)}</span>
+      </div>
+      <p><strong>צריך לאשר את הילד:</strong> ${passenger.name}</p>
+      <p><strong>כתובת נוסע:</strong> ${passenger.address}</p>
+      <p><strong>הסעה:</strong> ${ride ? `${ride.origin} אל ${ride.destination}` : "ההסעה נמחקה"}</p>
+      ${approvedMessage}
+      ${passenger.status === "pending" ? `
+        <label class="time-row">
+          שעת מוכנות ליציאה
+          <input type="time" value="16:00" data-ready-time="${passenger.id}" />
+        </label>
+        <div class="request-actions">
+          <button class="approve" type="button" data-approve="${passenger.id}" ${canApprove ? "" : "disabled"}>אשר ילד</button>
+          <button class="reject" type="button" data-reject="${passenger.id}">דחה</button>
+        </div>
+      ` : ""}
+    `;
 
-    card.classList.add(request.status);
     requestsList.append(card);
   });
 }
 
 function renderStats() {
-  const pending = requests.filter((request) => request.status === "pending").length;
-  const approved = requests.filter((request) => request.status === "approved").length;
-  const openSeats = rides.reduce((total, ride) => total + openSeatsForRide(ride), 0);
-
-  pendingCount.textContent = pending;
-  approvedCount.textContent = approved;
-  openSeatsCount.textContent = openSeats;
+  carsCount.textContent = state.rides.length;
+  pendingCount.textContent = state.passengers.filter((passenger) => passenger.status === "pending").length;
+  approvedCount.textContent = state.passengers.filter((passenger) => passenger.status === "approved").length;
+  openSeatsCount.textContent = state.rides.reduce((sum, ride) => sum + openSeats(ride), 0);
 }
 
 function render() {
-  renderRideSelect();
-  renderRides();
+  renderCars();
   renderRequests();
+  renderRideSelect();
   renderStats();
 }
 
-function updateRequestStatus(requestId, status) {
-  const request = requests.find((item) => item.id === requestId);
-  const ride = request ? getRide(request.rideId) : null;
+function approvePassenger(passengerId) {
+  const passenger = state.passengers.find((item) => item.id === passengerId);
+  if (!passenger) return;
 
-  if (!request || !ride) return;
-  if (status === "approved" && request.status !== "approved" && openSeatsForRide(ride) === 0) {
-    alert("אין מקום פנוי בהסעה הזו.");
+  const ride = state.rides.find((item) => item.id === passenger.rideId);
+  if (!ride || openSeats(ride) === 0) {
+    alert("אין מקום פנוי ברכב הזה.");
     return;
   }
 
-  request.status = status;
+  const timeInput = document.querySelector(`[data-ready-time="${passengerId}"]`);
+  passenger.status = "approved";
+  passenger.readyTime = timeInput?.value || "16:00";
   saveState();
   render();
 }
 
+function rejectPassenger(passengerId) {
+  const passenger = state.passengers.find((item) => item.id === passengerId);
+  if (!passenger) return;
+  passenger.status = "rejected";
+  passenger.readyTime = "";
+  saveState();
+  render();
+}
+
+openRideForm.addEventListener("click", () => showDialog(rideDialog));
+openPassengerForm.addEventListener("click", () => openPassengerDialog());
+
+document.querySelectorAll("[data-close]").forEach((button) => {
+  button.addEventListener("click", () => {
+    document.querySelector(`#${button.dataset.close}`).close();
+  });
+});
+
+carsList.addEventListener("click", (event) => {
+  const addButton = event.target.closest("[data-add-passenger]");
+  if (!addButton) return;
+  openPassengerDialog(addButton.dataset.addPassenger);
+});
+
+requestsList.addEventListener("click", (event) => {
+  const approveButton = event.target.closest("[data-approve]");
+  const rejectButton = event.target.closest("[data-reject]");
+
+  if (approveButton) approvePassenger(approveButton.dataset.approve);
+  if (rejectButton) rejectPassenger(rejectButton.dataset.reject);
+});
+
 driverForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const form = new FormData(driverForm);
-  const seats = Number(form.get("driverSeats"));
 
-  rides.unshift({
+  state.rides.unshift({
     id: crypto.randomUUID(),
     driverName: form.get("driverName").trim(),
-    origin: form.get("driverOrigin").trim(),
-    seats,
-    destination: form.get("driverDestination").trim(),
+    origin: form.get("origin").trim(),
+    seats: Number(form.get("seats")),
+    destination: form.get("destination").trim(),
     createdAt: Date.now()
   });
 
   saveState();
   driverForm.reset();
-  document.querySelector("#driverSeats").value = 4;
+  driverForm.querySelector('[name="seats"]').value = 4;
+  rideDialog.close();
   render();
 });
 
 passengerForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const form = new FormData(passengerForm);
-  const rideId = form.get("rideSelect");
-  const ride = getRide(rideId);
+  const rideId = form.get("rideId");
+  const ride = state.rides.find((item) => item.id === rideId);
 
-  if (!ride || openSeatsForRide(ride) === 0) {
-    alert("צריך לבחור הסעה עם מקום פנוי.");
+  if (!ride || openSeats(ride) === 0) {
+    alert("צריך לבחור רכב עם מקום פנוי.");
     return;
   }
 
-  requests.unshift({
+  state.passengers.unshift({
     id: crypto.randomUUID(),
-    passengerName: form.get("passengerName").trim(),
-    passengerAddress: form.get("passengerAddress").trim(),
     rideId,
+    name: form.get("passengerName").trim(),
+    address: form.get("passengerAddress").trim(),
     status: "pending",
+    readyTime: "",
     createdAt: Date.now()
   });
 
   saveState();
   passengerForm.reset();
+  passengerDialog.close();
+  preselectedRideId = "";
   render();
-});
-
-document.querySelectorAll(".filter").forEach((button) => {
-  button.addEventListener("click", () => {
-    document.querySelector(".filter.active").classList.remove("active");
-    button.classList.add("active");
-    activeFilter = button.dataset.filter;
-    renderRequests();
-  });
 });
 
 window.addEventListener("beforeinstallprompt", (event) => {
